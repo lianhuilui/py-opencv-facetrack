@@ -47,3 +47,27 @@ def calc_center(x, y, w, h):
 
 def diff(one, two):
     return (abs(one[0] - two[0]), abs(one[1] - two[1]))
+
+def add(one, two):
+    return (one[0] + two[0], one[1] + two[1])
+
+def sub(one, two):
+    return (one[0] - two[0], one[1] - two[1])
+
+def clamp(delta, max_change):
+    x = delta[0]
+    y = delta[1]
+
+    if delta[0] < 0 and -delta[0] > max_change:
+        x =- max_change
+    
+    if delta[1] < 0 and -delta[1] > max_change:
+        y =- max_change
+
+    if delta[0] > 0 and delta[0] > max_change:
+        x = max_change
+    
+    if delta[1] > 0 and delta[1] > max_change:
+        y = max_change
+
+    return (x, y)

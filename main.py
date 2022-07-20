@@ -9,8 +9,7 @@ eye_file = 'C:\\Users\\lianh\\Desktop\\testcv\\env\\Lib\\site-packages\\cv2\\dat
 eye_cascade = cv.CascadeClassifier(eye_file)
 
 cap = cv.VideoCapture(0)
-cap = cv.VideoCapture(0)
-cap.set(cv.CAP_PROP_FPS, 60)
+cap.set(cv.CAP_PROP_FPS, 30)
 
 if not cap.isOpened():
     print("Cannot open camera")
@@ -48,8 +47,9 @@ cv.setWindowProperty('fit', cv.WND_PROP_TOPMOST, 1)
 cv.setWindowTitle('fit', "FaceTrack")
 
  # max pixels per frame
-max_delta = 2 # 1 means 1 pixel per frame update
+max_delta = 1 # 1 means 1 pixel per frame update
 min_delta = 5
+buffer_delta = (0, 0)
 
 prev_target_center = None
 old = None
@@ -73,6 +73,7 @@ while True:
         face_rects = []
         eye_rects = []
 
+        # gray = cam_img
         gray = cv.cvtColor(cam_img, cv.COLOR_BGR2GRAY)
 
         # faces
@@ -122,19 +123,30 @@ while True:
                 old_x, old_y = old
 
                 diff = utils.diff(target_center, prev_target_center)
+                buffer_delta = utils.sub(target_center, prev_target_center)
 
-                if (diff[0] > min_delta or diff[1] > min_delta):
-                    if target_x < old_x: target_x = max(target_x, old_x - max_delta)
-                    if target_y < old_y: target_y = max(target_y, old_y - max_delta)
-                    if target_x > old_x: target_x = min(target_x, old_x + max_delta)
-                    if target_y > old_y: target_y = min(target_y, old_y + max_delta)
+                if (abs(buffer_delta[0]) > min_delta or abs(buffer_delta[1]) > min_delta):
+                    # if target_x < old_x: target_x = max(target_x, old_x - max_delta)
+                    # if target_y < old_y: target_y = max(target_y, old_y - max_delta)
+                    # if target_x > old_x: target_x = min(target_x, old_x + max_delta)
+                    # if target_y > old_y: target_y = min(target_y, old_y + max_delta)
+
+                    clamped = utils.clamp(buffer_delta, max_delta)
+
+                    the_target = utils.add(old, clamped)
 
                     # utils.overlay_img(img, cam_img, (x - ((fit-w)//2), y - ((fit-h) // 2), fit, fit), pin=pins[pin_index % len(pins)])
                     # print(diff, 'moving...', utils.diff((target_x, target_y), (old_x, old_y)), 'to', (target_x, target_y))
-                    utils.overlay_img(small_img, cam_img, (target_x, target_y, fit, fit), pin=pins[pin_index % len(pins)])
 
-                    prev_target_center = utils.calc_center(target_x, target_y, fit, fit)
-                    old = (target_x, target_y)
+                    # utils.overlay_img(small_img, cam_img, (target_x, target_y, fit, fit), pin=pins[pin_index % len(pins)])
+                    # prev_target_center = utils.calc_center(target_x, target_y, fit, fit)
+                    # old = (target_x, target_y)
+                    # buffer_delta = utils.sub(buffer_delta, (target_x, target_y))
+
+                    utils.overlay_img(small_img, cam_img, (the_target[0], the_target[1], fit, fit), pin=pins[pin_index % len(pins)])
+                    prev_target_center = utils.calc_center(the_target[0], the_target[1], fit, fit)
+                    old = (the_target[0], the_target[1])
+                    buffer_delta = utils.sub(buffer_delta, clamped)
 
                 else:
                     # do nothing
@@ -164,6 +176,12 @@ while True:
         (x, y, w, h) = face_rects[0]
         cv.rectangle(img, (x, y), (w, h), (0, 255, 0), 2)
 
+    if len(eye_rects) > 0:
+        for eye in eye_rects:
+            (x, y, w, h) = eye
+            # cv.rectangle(img, (x, y), (w, h), (0, 0, 0), 1)
+            cv.circle(img, (x + ((w-x)//2) , y + ((h-y)//2)), 20, (0,0,0), 2, cv.LINE_AA)
+
     cv.imshow('frame', img)
 
     cv.imshow('fit', small_img)
@@ -186,6 +204,9 @@ while True:
     if key == ord('q'):
         print("q pressed")
         break
+
+    print(buffer_delta)
+    print('o:',old)
 
 cap.release()
 cv.destroyAllWindows()
