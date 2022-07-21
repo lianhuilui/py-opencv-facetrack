@@ -2,10 +2,10 @@ import numpy as np
 import cv2 as cv
 import utils
 
-face_file = 'C:\\Users\\lianh\\Desktop\\testcv\\env\\Lib\\site-packages\\cv2\\data\\haarcascade_frontalface_alt2.xml'
+face_file = 'env\\Lib\\site-packages\\cv2\\data\\haarcascade_frontalface_alt2.xml'
 face_cascade = cv.CascadeClassifier(face_file)
 
-eye_file = 'C:\\Users\\lianh\\Desktop\\testcv\\env\\Lib\\site-packages\\cv2\\data\\haarcascade_eye.xml'
+eye_file = 'env\\Lib\\site-packages\\cv2\\data\\haarcascade_eye.xml'
 eye_cascade = cv.CascadeClassifier(eye_file)
 
 cap = cv.VideoCapture(0)
