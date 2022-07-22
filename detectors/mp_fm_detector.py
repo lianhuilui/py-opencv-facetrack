@@ -21,9 +21,12 @@ class MPFMDetector(BaseDetector):
 
     def process_frame(self, input_image):
         import cv2 as cv
+        import numpy
 
         self.output_image = cv.cvtColor(input_image, cv.COLOR_BGR2RGB)
         results = self.face_mesh.process(self.output_image)
+
+        cal_avg = True
 
         if results.multi_face_landmarks:
             for face_landmarks in results.multi_face_landmarks:
@@ -34,14 +37,30 @@ class MPFMDetector(BaseDetector):
                     xs.append(landmark.x)
                     ys.append(landmark.y)
 
-                self.boundingbox = [int(min(xs) * input_image.shape[1]),
-                                    int(min(ys) * input_image.shape[0]),
-                                    int(max(xs) * input_image.shape[1]),
-                                    int(max(ys) * input_image.shape[0])]
+                if not cal_avg:
+                    self.boundingbox = [int(min(xs) * input_image.shape[1]),
+                                        int(min(ys) * input_image.shape[0]),
+                                        int(max(xs) * input_image.shape[1]),
+                                        int(max(ys) * input_image.shape[0])]
 
-                self.centerpoint = (
-                    (self.boundingbox[0] + self.boundingbox[2]) // 2,
-                    (self.boundingbox[1] + self.boundingbox[3]) // 2)
+                    self.centerpoint = (
+                        (self.boundingbox[0] + self.boundingbox[2]) // 2,
+                        (self.boundingbox[1] + self.boundingbox[3]) // 2)
+                else:
+                    self.centerpoint = (
+                        int(numpy.average(xs) * input_image.shape[1]),
+                        int(numpy.average(ys) * input_image.shape[0])
+                    )
+
+                    w = int((max(xs) - min(xs)) * input_image.shape[1])
+                    h = int((max(ys) - min(ys)) * input_image.shape[0])
+
+                    self.boundingbox = [
+                        self.centerpoint[0] - w//2,
+                        self.centerpoint[1] - h//2,
+                        self.centerpoint[0] + w//2,
+                        self.centerpoint[1] + h//2
+                    ]
 
                 dot_spec = self.mp_drawing.DrawingSpec(
                     thickness=1, circle_radius=0, color=(255, 255, 255))
